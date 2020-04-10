@@ -57,15 +57,20 @@ class PluginAudioProcessorBase : public juce::AudioProcessor
 public:
     //==============================================================================
     PluginAudioProcessorBase()
-     : AudioProcessor  (createBusLayout()),
-       parameters      (*this, &undoManager, getAPVTSType(), ParameterProvider::createParameterLayout()),
-       bypassParameter (parameters.getParameter (ParameterProvider::Bypass::id))
-    {}
+     : AudioProcessor        (createBusLayout()),
+       parameters            (*this, &undoManager, getAPVTSType(), ParameterProvider::createParameterLayout()),
+       stateAndPresetManager (*this, parameters, undoManager),
+       bypassParameter       (parameters.getParameter (ParameterProvider::Bypass::id))
+    {
+        // The bypass parameter id in your ParameterProvider class is not valid
+        jassert (bypassParameter != nullptr);
+    }
 
     virtual ~PluginAudioProcessorBase() {}
 
     /** An initialization call that will concatenate prepareToPlay and numChannelsChanged */
     virtual void prepareResources (bool sampleRateChanged, bool maxBlockSizeChanged, bool numChannelsChanged) = 0;
+    virtual void processBlock (juce::dsp::AudioBlock<float>& block) = 0;
 
     /** Most plugins should not need this anyway */
     virtual void releaseResources() override {}
@@ -100,8 +105,8 @@ public:
     int getMaxNumSamplesPerBlock() { return currentMaxNumSamplesPerBlock; }
 
     /**
-     * Creates a ProcessSpec object containig the current processors sampleRate, the current processors max number of
-     * samples per block and the number of channels passed to the function
+     * Creates a dsp::ProcessSpec object containig the current processors sampleRate, the current processors max number
+     * of samples per block and the number of channels passed to the function
      */
     juce::dsp::ProcessSpec createProcessSpec (int numChannels)
     {
@@ -113,7 +118,8 @@ public:
     }
 
     juce::AudioProcessorValueTreeState parameters;
-    juce::UndoManager undoManager;
+    juce::UndoManager                  undoManager;
+    StateAndPresetManager              stateAndPresetManager;
 private:
 
     void prepareToPlay (double newSampleRate, int maxNumSamplesPerBlock) override
@@ -125,11 +131,93 @@ private:
         currentMaxNumSamplesPerBlock = maxNumSamplesPerBlock;
 
         prepareResources (sampleRateChanged, samplesPerBlockChanged, false);
+
+        if (auto delayLineDepth = getLatencySamples())
+        {
+            delayLine = std::make_unique<jb::MultichannelDelayLine<float>> (delayLineDepth);
+            bypassTempBuffer.setSize (getTotalNumOutputChannels(), maxNumSamplesPerBlock);
+        }
+        else
+        {
+            delayLine.reset (nullptr);
+        }
+
     }
+
+    void processBlock (juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midiBuffer) override
+    {
+        // If process block with bypass enabled is called, call processBlockBypassed
+        if (bypassParameter->getValue() > 0.5f)
+        {
+            processBlockBypassed (buffer, midiBuffer);
+            return;
+        }
+
+        // If the last block was bypassed, a fade should occur
+        if (lastBlockWasBypassed)
+        {
+            processWithBypassFade<false> (buffer);
+            lastBlockWasBypassed = false;
+        }
+        else
+        {
+            juce::dsp::AudioBlock<float> inOutBlock (buffer);
+            processBlock (inOutBlock);
+        }
+    }
+
+    void processBlockBypassed (juce::AudioBuffer<float>& buffer, juce::MidiBuffer&) override
+    {
+        // If the last block was not bypassed, a fade should occur
+        if (!lastBlockWasBypassed)
+        {
+            processWithBypassFade<true> (buffer);
+            lastBlockWasBypassed = true;
+        }
+        else if (delayLine != nullptr)
+        {
+            juce::dsp::AudioBlock<float> inOutBlock (buffer);
+            juce::dsp::AudioBlock<float> bypassBlock (bypassTempBuffer);
+
+            delayLine->processBlock (inOutBlock, bypassBlock);
+            inOutBlock.copyFrom (bypassBlock);
+        }
+    }
+
+    template <bool fadeIntoBypass>
+    void processWithBypassFade (juce::AudioBuffer<float>& buffer)
+    {
+        juce::dsp::AudioBlock<float> inOutBlock (buffer);
+        juce::dsp::AudioBlock<float> bypassBlock (bypassTempBuffer);
+
+        if (delayLine == nullptr)
+        {
+            bypassBlock.copyFrom (inOutBlock);
+        }
+        else
+        {
+            if (fadeIntoBypass) delayLine->reset();
+
+            delayLine->processBlock (inOutBlock, bypassBlock);
+        }
+
+        processBlock (inOutBlock);
+
+        auto rampLength = std::min (buffer.getNumSamples(), bypassRampLen);
+
+        constexpr float a = fadeIntoBypass ? 1.0f : 0.0f;
+        constexpr float b = fadeIntoBypass ? 0.0f : 1.0f;
+
+        buffer          .applyGainRamp (0, rampLength, a, b);
+        bypassTempBuffer.applyGainRamp (0, rampLength, b, a);
+
+        inOutBlock.add (bypassBlock);
+    }
+
 
     void numChannelsChanged() override { prepareResources (false, false, true); }
 
-    // Don't plan to ever build a plugin without editor
+    // I don't ever plan to build a plugin without editor
     bool hasEditor() const override { return true; }
 
     #ifdef JucePlugin_Name
@@ -145,24 +233,23 @@ private:
 
     void getStateInformation (juce::MemoryBlock& destData) override
     {
-        auto state = parameters.copyState();
-        auto xml = state.createXml();
-        copyXmlToBinary (*xml, destData);
+        stateAndPresetManager.getStateInformation (destData);
     }
 
     void setStateInformation (const void* data, int sizeInBytes) override
     {
-        auto xmlState = getXmlFromBinary (data, sizeInBytes);
-
-        if (xmlState.get() != nullptr)
-            if (xmlState->hasTagName (parameters.state.getType()))
-                parameters.replaceState (juce::ValueTree::fromXml (*xmlState));
+        stateAndPresetManager.setStateInformation (data, sizeInBytes);
     }
 
-    int currentMaxNumSamplesPerBlock = 0;
+    int    currentMaxNumSamplesPerBlock = 0;
     double currentSampleRate = 0.0;
 
-    juce::AudioProcessorParameter* bypassParameter = nullptr;
+    // Bypass handling
+    juce::AudioProcessorParameter*                bypassParameter;
+    std::unique_ptr<MultichannelDelayLine<float>> delayLine;
+    juce::AudioBuffer<float>                      bypassTempBuffer;
+    bool                                          lastBlockWasBypassed;
+    int                                           bypassRampLen = 128;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (PluginAudioProcessorBase)
 };
