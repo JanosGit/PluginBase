@@ -50,6 +50,8 @@
 
 #include "DSP/DelayLine.h"
 
+#include "Presets/PresetManager.h"
+
 #include "Parameters/AttachedWidget.h"
 
 #include "Processor/PluginAudioProcessorBase.h"
