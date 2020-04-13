@@ -66,11 +66,15 @@ public:
         jassert (bypassParameter != nullptr);
     }
 
-    virtual ~PluginAudioProcessorBase() {}
-
     /** An initialization call that will concatenate prepareToPlay and numChannelsChanged */
     virtual void prepareResources (bool sampleRateChanged, bool maxBlockSizeChanged, bool numChannelsChanged) = 0;
     virtual void processBlock (juce::dsp::AudioBlock<float>& block) = 0;
+
+    /**
+     * The audio processor has a processBlock overload with double buffers. This declaration silences shadowing warnings
+     * and allows us to still override the double version if we want to.
+     */
+    using AudioProcessor::processBlock;
 
     /** Most plugins should not need this anyway */
     virtual void releaseResources() override {}
@@ -84,11 +88,11 @@ public:
     virtual double getTailLengthSeconds() const override { return 0.0; }
 
     /** Can be overriden if programs are supported */
-    virtual int getNumPrograms()                                            override { return 1; }
-    virtual int getCurrentProgram()                                         override { return 0; }
-    virtual void setCurrentProgram (int index)                              override {}
-    virtual const juce::String getProgramName (int index)                   override { return {}; }
-    virtual void changeProgramName (int index, const juce::String& newName) override {}
+    virtual int getNumPrograms()                              override { return 1; }
+    virtual int getCurrentProgram()                           override { return 0; }
+    virtual void setCurrentProgram (int)                      override {}
+    virtual const juce::String getProgramName (int)           override { return {}; }
+    virtual void changeProgramName (int, const juce::String&) override {}
 
     /**
      * This default implementation only reports a mono in- and output to the host. Override its return value if

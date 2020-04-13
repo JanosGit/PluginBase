@@ -80,7 +80,7 @@ private:
 class PresetManagerComponent : public juce::Component
 {
 public:
-    ~PresetManagerComponent();
+    ~PresetManagerComponent() override;
 
     using OnResizeFunction = std::function<void(const Component& presetManagerComponent)>;
 

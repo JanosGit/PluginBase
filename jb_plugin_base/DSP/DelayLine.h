@@ -32,12 +32,12 @@ template<typename SampleType>
 class MultichannelDelayLine
 {
 public:
-    explicit MultichannelDelayLine (int numSamples, int numChannels = 1)
-      : memory      (numChannels, numSamples),
-        indices     (size_t (numChannels), 0),
+    explicit MultichannelDelayLine (int numSamples, int nChannels = 1)
+      : memory      (nChannels, numSamples),
+        indices     (size_t (nChannels), 0),
         memoryPtr   (memory.getArrayOfWritePointers()),
         length      (numSamples),
-        numChannels (numChannels)
+        numChannels (nChannels)
     {
         memory.clear ();
     }
@@ -45,8 +45,10 @@ public:
     /** Pushes a new sample into the delay line. This will overwrite the oldest sample */
     void push (SampleType valueToPush, int channel) noexcept
     {
-        auto& idx = indices[channel];
-        memoryPtr[channel][idx] = valueToPush;
+        const auto c = static_cast<size_t> (channel);
+
+        auto& idx = indices[c];
+        memoryPtr[c][idx] = valueToPush;
         --idx;
         if (idx < 0) idx = 0;
     }
@@ -54,18 +56,20 @@ public:
     /** Returns the oldest sample in the delay line */
     SampleType back (int channel) const noexcept
     {
-        return memoryPtr[channel][indices[channel]];
+        const auto c = static_cast<size_t> (channel);
+
+        return memoryPtr[c][indices[c]];
     }
 
     /**
      * Reads the src buffer and writes the delayed signal into the dest buffer. Both buffers must not point to the
      * same memory.
      */
-    void processBuffer (const SampleType* src, SampleType* dest, int length, int channel)
+    void processBuffer (const SampleType* src, SampleType* dest, int bufferLength, int channel)
     {
         jassert (src != dest);
 
-        for (int sample = 0; sample < length; ++sample)
+        for (int sample = 0; sample < bufferLength; ++sample)
         {
             dest[sample] = back (channel);
             push (src[sample], channel);
@@ -78,8 +82,8 @@ public:
      */
     void processBlock (const juce::dsp::AudioBlock<SampleType>& srcBlock, juce::dsp::AudioBlock<SampleType>& destBlock)
     {
-        jassert (numChannels == srcBlock.getNumChannels());
-        jassert (numChannels == destBlock.getNumChannels());
+        jassert (numChannels == static_cast<int> (srcBlock.getNumChannels()));
+        jassert (numChannels == static_cast<int> (destBlock.getNumChannels()));
         jassert (srcBlock.getNumSamples() == destBlock.getNumSamples());
 
         auto numSamples = static_cast<int> (srcBlock.getNumSamples ());

@@ -10,10 +10,10 @@ namespace jb
 {
 StateAndPresetManager::StateAndPresetManager (juce::AudioProcessor& processorToControl,
                                               juce::AudioProcessorValueTreeState& apvts,
-                                              juce::UndoManager& undoManager)
-  : processor  (processorToControl),
-    undoManager (undoManager),
-    parameters (apvts)
+                                              juce::UndoManager& undoManagerToUse)
+  : processor   (processorToControl),
+    undoManager (undoManagerToUse),
+    parameters  (apvts)
 {
     if (!presetDirectory.exists())
         presetDirectory.createDirectory();
