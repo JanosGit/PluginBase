@@ -39,7 +39,7 @@ namespace jb
  *         static const juce::String id;
  *     }
  *
- *     static juce::AudioProcessorValueTreeState::ParameterLayout MyProcessor::createParameterLayout()
+ *     static juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout()
  *     {
  *         return
  *         {
