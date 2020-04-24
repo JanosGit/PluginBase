@@ -10,6 +10,7 @@ namespace jb
 {
 StateAndPresetManager::StateAndPresetManager (juce::AudioProcessor& processorToControl,
                                               juce::AudioProcessorValueTreeState& apvts,
+                                              juce::StringArray&& managedParameters,
                                               juce::UndoManager& undoManagerToUse)
   : processor   (processorToControl),
     undoManager (undoManagerToUse),
@@ -36,6 +37,8 @@ StateAndPresetManager::StateAndPresetManager (juce::AudioProcessor& processorToC
         presetFilesAvailableChanged();
     }
 
+    for (juce::StringRef p : managedParameters)
+        apvts.addParameterListener (p, this);
 }
 
 StateAndPresetManager::~StateAndPresetManager()
@@ -64,6 +67,7 @@ bool StateAndPresetManager::loadPreset (const juce::String& presetName)
 
         juce::MemoryMappedFile file (presetFile, juce::MemoryMappedFile::readOnly);
 
+        juce::ScopedValueSetter<bool> vs (presetLoadingInProgress, true);
         setStateInformation (file.getData(), int (file.getSize()));
         return true;
     }
@@ -184,6 +188,22 @@ void StateAndPresetManager::setStateInformation (const void* data, int sizeInByt
 
 }
 
+void StateAndPresetManager::parameterChanged (const juce::String&, float)
+{
+    if (!presetLoadingInProgress)
+        currentPresetInvalidated();
+}
+
+void StateAndPresetManager::currentPresetInvalidated ()
+{
+    if (currentPresetName.isEmpty())
+        return;
+
+    currentPresetName = "";
+    if (presetManagerComponent != nullptr)
+        presetManagerComponent->currentPresetInvalidated();
+}
+
 const File StateAndPresetManager::presetDirectory = File::getSpecialLocation (File::SpecialLocationType::userApplicationDataDirectory)
                                                     #if JUCE_MAC
                                                     .getChildFile ("Audio/Presets")
@@ -217,6 +237,9 @@ PresetManagerComponent::PresetManagerComponent (juce::Component& editorToOverlay
 
     presetMenu.onChange = [this]()
     {
+        if (presetMenu.getSelectedId() == 0)
+            return;
+
         auto presetName = presetMenu.getText();
         manager.loadPreset (presetName);
     };
@@ -275,6 +298,16 @@ void PresetManagerComponent::presetsAvailableChanged()
     presetMenu.setSelectedId (currentPresetIdx + 1, juce::dontSendNotification);
 }
 
+void PresetManagerComponent::currentPresetInvalidated()
+{
+    auto selectedText = presetMenu.getText();
+
+    if (selectedText.isNotEmpty())
+    {
+        presetMenu.setText ("* Modified * " + selectedText);
+    }
+}
+
 PresetManagerComponent::SaveComponent::SaveComponent (PresetManagerComponent* parent) : presetManagerComponent (parent)
 {
     editor.onTextChange = [this]()
@@ -291,7 +324,12 @@ PresetManagerComponent::SaveComponent::SaveComponent (PresetManagerComponent* pa
 
         if (auto* comp = presetManagerComponent.getComponent())
         {
+            juce::ScopedValueSetter<bool> sv (comp->manager.presetLoadingInProgress, true);
+
             comp->manager.storePreset (presetName);
+            comp->manager.loadPreset (presetName);
+
+            comp->presetsAvailableChanged();
             comp->editor.removeChildComponent (this);
         }
         delete this;
@@ -315,6 +353,12 @@ PresetManagerComponent::SaveComponent::SaveComponent (PresetManagerComponent* pa
     parent->editor.addAndMakeVisible (this);
 
     setBounds (parent->editor.getBounds());
+
+    auto currentPresetText = parent->presetMenu.getText();
+    if (currentPresetText.startsWith ("* Modified * "))
+        currentPresetText = currentPresetText.substring (13);
+
+    editor.setText (currentPresetText);
 }
 
 void PresetManagerComponent::SaveComponent::paint (juce::Graphics& g)

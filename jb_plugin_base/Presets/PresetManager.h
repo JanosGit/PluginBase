@@ -26,14 +26,15 @@ namespace jb
 {
 class PresetManagerComponent;
 
-class StateAndPresetManager
+class StateAndPresetManager : private juce::AudioProcessorValueTreeState::Listener
 {
 public:
     StateAndPresetManager (juce::AudioProcessor& processorToCotrol,
                            juce::AudioProcessorValueTreeState& apvts,
+                           juce::StringArray&& managedParameters,
                            juce::UndoManager& undoManager);
 
-    ~StateAndPresetManager();
+    ~StateAndPresetManager() override;
 
     std::unique_ptr<PresetManagerComponent> createPresetManagerComponent (juce::Component& editor, bool withUndoRedoButtons);
 
@@ -60,6 +61,7 @@ private:
     juce::UndoManager&                  undoManager;
     juce::AudioProcessorValueTreeState& parameters;
     juce::CriticalSection               parametersLock;
+    bool                                presetLoadingInProgress = false;
 
     using NameFileMapping = std::pair<juce::String, const juce::File>;
     std::vector<NameFileMapping> presets;
@@ -73,6 +75,9 @@ private:
     void presetFilesAvailableChanged();
 
     juce::StringArray getPresetList();
+
+    void parameterChanged (const juce::String &parameterID, float /* newValue */) override;
+    void currentPresetInvalidated();
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (StateAndPresetManager)
 };
@@ -114,11 +119,11 @@ private:
 
     friend class StateAndPresetManager;
 
-    juce::Component& editor;
+    juce::Component&       editor;
     StateAndPresetManager& manager;
 
     juce::TextButton saveButton { "Save Preset" };
-    juce::ComboBox presetMenu;
+    juce::ComboBox   presetMenu;
     std::unique_ptr<juce::TextButton> undoButton, redoButton;
 
     SafePointer<SaveComponent> saveComponent;
@@ -128,6 +133,7 @@ private:
     void resized() override;
 
     void presetsAvailableChanged();
+    void currentPresetInvalidated();
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (PresetManagerComponent)
 };

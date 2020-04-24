@@ -26,9 +26,15 @@ namespace jb
 {
 
 /**
- * You need to pass in a class containing a static function called createParameterLayout() which returns the
- * ParameterLayout object representing the parameters of your plugin. Furthermore it is expected to contain
- * static String Bypass::id to identify the parameter ID of the bypass parameter to be exposed to the host.
+ * You need to pass in a class containing two static functions:
+ * - juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout() which returns the
+ *   ParameterLayout object representing the parameters of your plugin.
+ * - juce::StringArray getPresetMangagerParameters() which returns an array of parameter ids that
+ *   trigger the preset manager to mark a preset as "dirty"
+ *
+ * Furthermore it has to contain the netsted struct "Bypass", containing a static "id" string to identify
+ * the parameter ID of the bypass parameter to be exposed to the host.
+ *
  * Example:
  *
  * @code
@@ -47,6 +53,11 @@ namespace jb
  *             std::make_unique<AudioParameterInt>   ("b", "Parameter B", 0, 5, 2)
  *         };
  *     }
+ *
+ *     static juce::StringArray getPresetMangagerParameters()
+ *     {
+ *         return { "a", "b" };
+ *     }
  * }
  *   @endcode
  *
@@ -56,10 +67,10 @@ class PluginAudioProcessorBase : public juce::AudioProcessor
 {
 public:
     //==============================================================================
-    PluginAudioProcessorBase()
+    PluginAudioProcessorBase ()
      : AudioProcessor        (createBusLayout()),
        parameters            (*this, &undoManager, getAPVTSType(), ParameterProvider::createParameterLayout()),
-       stateAndPresetManager (*this, parameters, undoManager),
+       stateAndPresetManager (*this, parameters, ParameterProvider::getPresetMangagerParameters(), undoManager),
        bypassParameter       (parameters.getParameter (ParameterProvider::Bypass::id))
     {
         // The bypass parameter id in your ParameterProvider class is not valid
