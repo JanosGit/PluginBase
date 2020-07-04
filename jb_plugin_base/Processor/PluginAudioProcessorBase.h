@@ -191,6 +191,8 @@ private:
         }
         else if (delayLine != nullptr)
         {
+            bypassTempBuffer.setSize (buffer.getNumChannels(), buffer.getNumSamples(), false, false, true);
+
             juce::dsp::AudioBlock<float> inOutBlock (buffer);
             juce::dsp::AudioBlock<float> bypassBlock (bypassTempBuffer);
 
@@ -202,6 +204,8 @@ private:
     template <bool fadeIntoBypass>
     void processWithBypassFade (juce::AudioBuffer<float>& buffer)
     {
+        bypassTempBuffer.setSize (buffer.getNumChannels(), buffer.getNumSamples(), false, false, true);
+
         juce::dsp::AudioBlock<float> inOutBlock (buffer);
         juce::dsp::AudioBlock<float> bypassBlock (bypassTempBuffer);
 
