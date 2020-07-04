@@ -66,8 +66,8 @@ template <typename ButtonType>
 struct AttachedWidget<ButtonType, EnableAttachmentIfWidgetTypeDerivesFrom<ButtonType, juce::Button>> : public ButtonType
 {
     template <typename ...ButtonConstructorArgs>
-    AttachedWidget (juce::AudioProcessorValueTreeState& parameters, const juce::String& paramID, ButtonConstructorArgs... args)
-     : ButtonType (args...),
+    AttachedWidget (juce::AudioProcessorValueTreeState& parameters, const juce::String& paramID, ButtonConstructorArgs&&... args)
+     : ButtonType (std::forward<ButtonConstructorArgs> (args)...),
        attachment (parameters, paramID, *this)
     {}
 
@@ -79,8 +79,8 @@ template <typename SliderType>
 struct AttachedWidget<SliderType, EnableAttachmentIfWidgetTypeDerivesFrom<SliderType, juce::Slider>> : public SliderType
 {
     template <typename ...SliderConstructorArgs>
-    AttachedWidget (juce::AudioProcessorValueTreeState& parameters, const juce::String& paramID, SliderConstructorArgs... args)
-     : SliderType (args...),
+    AttachedWidget (juce::AudioProcessorValueTreeState& parameters, const juce::String& paramID, SliderConstructorArgs&&... args)
+     : SliderType (std::forward<SliderConstructorArgs> (args)...),
        attachment (parameters, paramID, *this)
     {}
 
@@ -92,8 +92,8 @@ template <typename ComboBoxType>
 struct AttachedWidget<ComboBoxType, EnableAttachmentIfWidgetTypeDerivesFrom<ComboBoxType, juce::ComboBox>> : public ComboBoxType
 {
     template <typename ...ComboBoxConstructorArgs>
-    AttachedWidget (juce::AudioProcessorValueTreeState& parameters, const juce::String& paramID, ComboBoxConstructorArgs... args)
-     : ComboBoxType (args...),
+    AttachedWidget (juce::AudioProcessorValueTreeState& parameters, const juce::String& paramID, ComboBoxConstructorArgs&&... args)
+     : ComboBoxType (std::forward<ComboBoxConstructorArgs> (args)...),
        attachment   (parameters, paramID, *this)
     {}
 
