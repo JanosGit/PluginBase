@@ -300,12 +300,19 @@ void PresetManagerComponent::presetsAvailableChanged()
 
 void PresetManagerComponent::currentPresetInvalidated()
 {
-    auto selectedText = presetMenu.getText();
-
-    if (selectedText.isNotEmpty())
+    // This has to be executed on the message thread
+    juce::MessageManager::callAsync ([safeThis = SafePointer<PresetManagerComponent> (this)]
     {
-        presetMenu.setText ("* Modified * " + selectedText);
-    }
+        if (auto* presetManagerComponent = safeThis.getComponent())
+        {
+            auto selectedText = presetManagerComponent->presetMenu.getText();
+
+            if (selectedText.isNotEmpty())
+            {
+                presetManagerComponent->presetMenu.setText ("***" + selectedText);
+            }
+        }
+    });
 }
 
 PresetManagerComponent::SaveComponent::SaveComponent (PresetManagerComponent* parent) : presetManagerComponent (parent)
@@ -355,8 +362,8 @@ PresetManagerComponent::SaveComponent::SaveComponent (PresetManagerComponent* pa
     setBounds (parent->editor.getBounds());
 
     auto currentPresetText = parent->presetMenu.getText();
-    if (currentPresetText.startsWith ("* Modified * "))
-        currentPresetText = currentPresetText.substring (13);
+    if (currentPresetText.startsWith ("***"))
+        currentPresetText = currentPresetText.substring (3);
 
     editor.setText (currentPresetText);
 }
