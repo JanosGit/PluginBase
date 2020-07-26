@@ -66,6 +66,7 @@ private:
     using NameFileMapping = std::pair<juce::String, const juce::File>;
     std::vector<NameFileMapping> presets;
     juce::String                 currentPresetName;
+    bool                         currentPresetWasModified = false;
     juce::CriticalSection        localResourcesLock;
 
     PresetManagerComponent* presetManagerComponent = nullptr;
@@ -77,7 +78,7 @@ private:
     juce::StringArray getPresetList();
 
     void parameterChanged (const juce::String &parameterID, float /* newValue */) override;
-    void currentPresetInvalidated();
+    void modifiedCurrentPreset();
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (StateAndPresetManager)
 };
@@ -133,7 +134,7 @@ private:
     void resized() override;
 
     void presetsAvailableChanged();
-    void currentPresetInvalidated();
+    void modifiedCurrentPreset();
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (PresetManagerComponent)
 };

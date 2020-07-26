@@ -64,6 +64,7 @@ bool StateAndPresetManager::loadPreset (const juce::String& presetName)
     if (presetFile.getFullPathName().isNotEmpty() && presetFile.existsAsFile())
     {
         currentPresetName = presetName;
+        currentPresetWasModified = false;
 
         juce::MemoryMappedFile file (presetFile, juce::MemoryMappedFile::readOnly);
 
@@ -78,6 +79,9 @@ bool StateAndPresetManager::loadPreset (const juce::String& presetName)
 void StateAndPresetManager::storePreset (const juce::String& presetName, bool skipIfPresetWithThisNameExists)
 {
     juce::ScopedLock localScopedLock (localResourcesLock);
+
+    if (currentPresetWasModified)
+        return;
 
     currentPresetName = presetName;
 
@@ -164,7 +168,7 @@ void StateAndPresetManager::getStateInformation (juce::MemoryBlock& destData)
     auto state = parameters.copyState();
     parametersLock.exit();
 
-    state.setProperty (presetNameID, currentPresetName, nullptr);
+    state.setProperty (presetNameID, currentPresetWasModified ? "" : currentPresetName, nullptr);
 
     auto xml = state.createXml();
     processor.copyXmlToBinary (*xml, destData);
@@ -191,17 +195,19 @@ void StateAndPresetManager::setStateInformation (const void* data, int sizeInByt
 void StateAndPresetManager::parameterChanged (const juce::String&, float)
 {
     if (!presetLoadingInProgress)
-        currentPresetInvalidated();
+        modifiedCurrentPreset();
 }
 
-void StateAndPresetManager::currentPresetInvalidated ()
+void StateAndPresetManager::modifiedCurrentPreset ()
 {
-    if (currentPresetName.isEmpty())
+    if (currentPresetWasModified || currentPresetName.isEmpty())
         return;
 
-    currentPresetName = "";
+    currentPresetWasModified = true;
+    currentPresetName = "***" + currentPresetName;
+
     if (presetManagerComponent != nullptr)
-        presetManagerComponent->currentPresetInvalidated();
+        presetManagerComponent->modifiedCurrentPreset();
 }
 
 const File StateAndPresetManager::presetDirectory = File::getSpecialLocation (File::SpecialLocationType::userApplicationDataDirectory)
@@ -291,27 +297,19 @@ PresetManagerComponent::~PresetManagerComponent()
 void PresetManagerComponent::presetsAvailableChanged()
 {
     auto presetList = manager.getPresetList();
-    auto currentPresetIdx = presetList.indexOf (manager.currentPresetName);
 
     presetMenu.clear (juce::dontSendNotification);
     presetMenu.addItemList (presetList, 1);
-    presetMenu.setSelectedId (currentPresetIdx + 1, juce::dontSendNotification);
+    presetMenu.setText (manager.currentPresetName);
 }
 
-void PresetManagerComponent::currentPresetInvalidated()
+void PresetManagerComponent::modifiedCurrentPreset()
 {
     // This has to be executed on the message thread
     juce::MessageManager::callAsync ([safeThis = SafePointer<PresetManagerComponent> (this)]
     {
         if (auto* presetManagerComponent = safeThis.getComponent())
-        {
-            auto selectedText = presetManagerComponent->presetMenu.getText();
-
-            if (selectedText.isNotEmpty())
-            {
-                presetManagerComponent->presetMenu.setText ("***" + selectedText);
-            }
-        }
+            presetManagerComponent->presetMenu.setText (presetManagerComponent->manager.currentPresetName);
     });
 }
 
@@ -333,6 +331,7 @@ PresetManagerComponent::SaveComponent::SaveComponent (PresetManagerComponent* pa
         {
             juce::ScopedValueSetter<bool> sv (comp->manager.presetLoadingInProgress, true);
 
+            comp->manager.currentPresetWasModified = false;
             comp->manager.storePreset (presetName);
             comp->manager.loadPreset (presetName);
 
@@ -361,11 +360,10 @@ PresetManagerComponent::SaveComponent::SaveComponent (PresetManagerComponent* pa
 
     setBounds (parent->editor.getBounds());
 
-    auto currentPresetText = parent->presetMenu.getText();
-    if (currentPresetText.startsWith ("***"))
-        currentPresetText = currentPresetText.substring (3);
+    // If this is a preset that modified, the three *** have to be removed prior to saving
+    auto nCharsToRemove = parent->manager.currentPresetWasModified ? 3 : 0;
 
-    editor.setText (currentPresetText);
+    editor.setText (parent->presetMenu.getText().substring (nCharsToRemove));
 }
 
 void PresetManagerComponent::SaveComponent::paint (juce::Graphics& g)
