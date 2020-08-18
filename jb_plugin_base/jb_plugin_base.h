@@ -52,9 +52,9 @@
 
 #include "Presets/PresetManager.h"
 
-#include "Parameters/AttachedWidget.h"
-
 #include "Processor/PluginAudioProcessorBase.h"
 
 #include "Editor/HighlightableWidget.h"
+#include "Editor/PluginEditorBase.h"
 
+#include "Parameters/AttachedWidget.h"
