@@ -24,6 +24,7 @@
 
 namespace jb
 {
+
 /**
  * Base class to group a GUI widget and the corresponding AudioProcessorValueTreeState attachment together.
  * It will inherit WidgetType so that it can be used just like being the widget type itself. For all current
@@ -42,14 +43,18 @@ namespace jb
  *
  * Only use this base type with two template parameters in case you have a custom AttachmentType. Using it with a
  * widget type not derived from juce::Button, juce::Slider or juce::ComboBox will trigger a compilation assertion.
+ *
+ * To make an attached highlight visible in context of AAX automation, you can chose a layout option for a possible
+ * highlighting box
  */
-template <typename WidgetType, typename AttachmentType = void>
-struct AttachedWidget : public WidgetType
+template <typename WidgetType, HighlightableWidget::BoxLayout boxLayout = HighlightableWidget::BoxLayout::NoBox, typename AttachmentType = void>
+struct AttachedWidget : public WidgetType, public HighlightableWidget
 {
     template <typename ...WidgetConstructorArgs>
     AttachedWidget (juce::AudioProcessorValueTreeState& parameters, const juce::String& paramID, WidgetConstructorArgs... args)
-     :  WidgetType (args...),
-        attachment (parameters, paramID, *this)
+     :  WidgetType          (std::forward<WidgetConstructorArgs> (args)...),
+        HighlightableWidget (parameters, paramID, *this, boxLayout),
+        attachment          (parameters, paramID, *this)
     {
         static_assert (std::is_void<AttachmentType>::value, "No attachment type known for widget type");
     }
@@ -62,39 +67,45 @@ template <typename WidgetType, typename Base>
 using EnableAttachmentIfWidgetTypeDerivesFrom = typename std::enable_if<std::is_base_of<Base, WidgetType>::value, void>::type;
 
 // Specialisation for a button with a juce::AudioProcessorValueTreeState::ButtonAttachment
-template <typename ButtonType>
-struct AttachedWidget<ButtonType, EnableAttachmentIfWidgetTypeDerivesFrom<ButtonType, juce::Button>> : public ButtonType
+template <typename ButtonType, HighlightableWidget::BoxLayout boxLayout>
+struct AttachedWidget<ButtonType, boxLayout, EnableAttachmentIfWidgetTypeDerivesFrom<ButtonType, juce::Button>> : public ButtonType,
+                                                                                                                  public HighlightableWidget
 {
     template <typename ...ButtonConstructorArgs>
     AttachedWidget (juce::AudioProcessorValueTreeState& parameters, const juce::String& paramID, ButtonConstructorArgs&&... args)
-     : ButtonType (std::forward<ButtonConstructorArgs> (args)...),
-       attachment (parameters, paramID, *this)
+     : ButtonType          (std::forward<ButtonConstructorArgs> (args)...),
+       HighlightableWidget (parameters, paramID, *this, boxLayout),
+       attachment          (parameters, paramID, *this)
     {}
 
     juce::AudioProcessorValueTreeState::ButtonAttachment attachment;
 };
 
 // Specialisation for a slider with a juce::AudioProcessorValueTreeState::SliderAttachment
-template <typename SliderType>
-struct AttachedWidget<SliderType, EnableAttachmentIfWidgetTypeDerivesFrom<SliderType, juce::Slider>> : public SliderType
+template <typename SliderType, HighlightableWidget::BoxLayout boxLayout>
+struct AttachedWidget<SliderType, boxLayout, EnableAttachmentIfWidgetTypeDerivesFrom<SliderType, juce::Slider>> : public SliderType,
+                                                                                                                  public HighlightableWidget
 {
     template <typename ...SliderConstructorArgs>
     AttachedWidget (juce::AudioProcessorValueTreeState& parameters, const juce::String& paramID, SliderConstructorArgs&&... args)
-     : SliderType (std::forward<SliderConstructorArgs> (args)...),
-       attachment (parameters, paramID, *this)
+     : SliderType          (std::forward<SliderConstructorArgs> (args)...),
+       HighlightableWidget (parameters, paramID, *this, boxLayout),
+       attachment          (parameters, paramID, *this)
     {}
 
     juce::AudioProcessorValueTreeState::SliderAttachment attachment;
 };
 
 // Specialisation for a button with a juce::AudioProcessorValueTreeState::ComboBoxAttachment
-template <typename ComboBoxType>
-struct AttachedWidget<ComboBoxType, EnableAttachmentIfWidgetTypeDerivesFrom<ComboBoxType, juce::ComboBox>> : public ComboBoxType
+template <typename ComboBoxType, HighlightableWidget::BoxLayout boxLayout>
+struct AttachedWidget<ComboBoxType, boxLayout, EnableAttachmentIfWidgetTypeDerivesFrom<ComboBoxType, juce::ComboBox>> : public ComboBoxType,
+                                                                                                                        public HighlightableWidget
 {
     template <typename ...ComboBoxConstructorArgs>
     AttachedWidget (juce::AudioProcessorValueTreeState& parameters, const juce::String& paramID, ComboBoxConstructorArgs&&... args)
-     : ComboBoxType (std::forward<ComboBoxConstructorArgs> (args)...),
-       attachment   (parameters, paramID, *this)
+     : ComboBoxType        (std::forward<ComboBoxConstructorArgs> (args)...),
+       HighlightableWidget (parameters, paramID, *this, boxLayout),
+       attachment          (parameters, paramID, *this)
     {}
 
     juce::AudioProcessorValueTreeState::ComboBoxAttachment attachment;
