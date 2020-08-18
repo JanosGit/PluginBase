@@ -56,4 +56,5 @@
 
 #include "Processor/PluginAudioProcessorBase.h"
 
+#include "Editor/HighlightableWidget.h"
 
