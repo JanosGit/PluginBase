@@ -79,6 +79,8 @@
 #include "DSP/DelayLine.h"
 
 #include "Presets/PresetManager.h"
+#include "Presets/SettingsManager.h"
+
 #include "Utils/Memory.h"
 
 #include "Processor/PluginAudioProcessorBase.h"
