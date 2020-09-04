@@ -44,13 +44,14 @@ public:
 
     void getStateInformation (juce::MemoryBlock& destData);
     void setStateInformation (const void* data, int sizeInBytes);
+
+    static const juce::File presetDirectory;
 private:
     friend class PresetManagerComponent;
 
     template <class ParameterProvider>
     friend class PluginAudioProcessorBase;
 
-    static const juce::File presetDirectory;
     static const juce::Identifier presetNameID;
 
     static juce::Array<juce::File>             presetFilesAvailable;
