@@ -82,6 +82,7 @@
 #include "Presets/SettingsManager.h"
 
 #include "Utils/Memory.h"
+#include "Utils/MessageOfTheDay.h"
 
 #include "Processor/PluginAudioProcessorBase.h"
 
