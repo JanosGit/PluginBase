@@ -43,14 +43,43 @@
 
 #pragma once
 
+/** Config: JB_INCLUDE_JSON
+    Includes the json for modern cpp headers which is included as submodule to this repository.
+    You can decide to not load the submodule and leave this feature turned off. This will
+    however disable some features that rely on json parsing such as the SettingsManager class.
+    If you enable it make sure to add Ext/json/include/ to your header searchpath or add the
+    dependency in your CMakeLists.txt if you are using CMake
+*/
+#ifndef JB_INCLUDE_JSON
+#define JB_INCLUDE_JSON 0
+#endif
+
 #include <juce_audio_processors/juce_audio_processors.h>
 #include <juce_dsp/juce_dsp.h>
 
-#include "Utils/Memory.h"
+#include <future>
+#include <thread>
+
+#if JB_INCLUDE_JSON
+#include <fstream>
+
+#if JUCE_CLANG
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wswitch-enum"
+#endif // JUCE_CLANG
+
+#include <nlohmann/json.hpp>
+
+#if JUCE_CLANG
+#pragma clang diagnostic pop
+#endif // JUCE_CLANG
+
+#endif // JB_INCLUDE_JSON
 
 #include "DSP/DelayLine.h"
 
 #include "Presets/PresetManager.h"
+#include "Utils/Memory.h"
 
 #include "Processor/PluginAudioProcessorBase.h"
 
