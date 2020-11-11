@@ -86,6 +86,11 @@ namespace jb
         clearSingletonInstance();
     }
 
+    bool SettingsManager::settingExists (const juce::String &id)
+    {
+        return settings.contains (id.toStdString());
+    }
+
     bool SettingsManager::getBoolSetting           (const juce::String &id, bool defaultVal)                { return getSetting (id, defaultVal); }
     int64_t SettingsManager::getInt64Setting       (const juce::String &id, int64_t defaultVal)             { return getSetting (id, defaultVal); }
     double SettingsManager::getDoubleSetting       (const juce::String &id, double defaultVal)              { return getSetting (id, defaultVal); }

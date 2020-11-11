@@ -34,6 +34,8 @@ public:
 
     ~SettingsManager();
 
+    bool settingExists (const juce::String& id);
+
     bool         getBoolSetting   (const juce::String& id, bool defaultVal);
     int64_t      getInt64Setting  (const juce::String& id, int64_t defaultVal);
     double       getDoubleSetting (const juce::String& id, double defaultVal);
