@@ -88,5 +88,6 @@
 
 #include "Editor/HighlightableWidget.h"
 #include "Editor/PluginEditorBase.h"
+#include "Editor/RectangleUtils.h"
 
 #include "Parameters/AttachedWidget.h"
