@@ -60,8 +60,9 @@
 #include <future>
 #include <thread>
 
+/** This flag is set when we link against the jb_git_version target, which contains the symbols for that struct */
 #if JB_HAS_GIT_VERSION
-#include "../CMake/gitVersion.h"
+#include "Utils/GitVersion.h"
 #endif
 
 #if JB_INCLUDE_JSON

@@ -25,12 +25,16 @@ else()
     string (STRIP "${GIT_BRANCH}" GIT_BRANCH)
 endif()
 
-set (VERSION "#include <jb_plugin_base/jb_plugin_base.h>
+set (VERSION "// Auto generated file
+
+#include <string>
+#include \"${CMAKE_CURRENT_LIST_DIR}/../jb_plugin_base/Utils/GitVersion.h\"
+
 namespace ProjectInfo
 {
-    const juce::String Git::commit = \"${GIT_REV}\";
-    const juce::String Git::tag    = \"${GIT_TAG}\";
-    const juce::String Git::branch = \"${GIT_BRANCH}\";
+    const std::string Git::commit = \"${GIT_REV}\";
+    const std::string Git::tag    = \"${GIT_TAG}\";
+    const std::string Git::branch = \"${GIT_BRANCH}\";
 }")
 
 if (EXISTS ${OUT_DIR}/gitVersion.cpp)
