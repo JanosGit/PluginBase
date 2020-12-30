@@ -1,5 +1,8 @@
 set(JB_PLUGIN_BASE_DIR ${CMAKE_CURRENT_SOURCE_DIR} PARENT_SCOPE)
 
+add_subdirectory (Ext/json)
+juce_add_module (jb_plugin_base)
+
 macro (jb_add_git_version_info TARGET_NAME)
     file (TOUCH ${CMAKE_CURRENT_BINARY_DIR}/gitVersion.cpp)
 
