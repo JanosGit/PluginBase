@@ -60,6 +60,10 @@
 #include <future>
 #include <thread>
 
+#if JB_HAS_GIT_VERSION
+#include "../CMake/gitVersion.h"
+#endif
+
 #if JB_INCLUDE_JSON
 #include <fstream>
 
