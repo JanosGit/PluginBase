@@ -13,7 +13,8 @@ macro (jb_add_git_version_info TARGET_NAME)
 
     # This custom target creates the actual file
     add_custom_target (jb_create_git_version
-            COMMAND ${CMAKE_COMMAND} -DOUT_DIR=${CMAKE_CURRENT_BINARY_DIR} -P ${JB_PLUGIN_BASE_DIR}/CMake/gitVersion.cmake)
+            COMMAND ${CMAKE_COMMAND} -DOUT_DIR=${CMAKE_CURRENT_BINARY_DIR} -P ${JB_PLUGIN_BASE_DIR}/CMake/gitVersion.cmake
+            WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
 
     # This compiles the file into a simple static library
     add_library(jb_git_version STATIC
