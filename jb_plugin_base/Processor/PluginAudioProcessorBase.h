@@ -147,16 +147,7 @@ private:
 
         prepareResources (sampleRateChanged, samplesPerBlockChanged, false);
 
-        if (auto delayLineDepth = getLatencySamples())
-        {
-            delayLine = std::make_unique<jb::MultichannelDelayLine<float>> (delayLineDepth);
-            bypassTempBuffer.setSize (getTotalNumOutputChannels(), maxNumSamplesPerBlock);
-        }
-        else
-        {
-            delayLine.reset (nullptr);
-        }
-
+        prepareBypassDelayLine();
     }
 
     void processBlock (juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midiBuffer) override
@@ -233,8 +224,25 @@ private:
         inOutBlock.add (bypassBlock);
     }
 
+    void numChannelsChanged() override
+    {
+        prepareResources (false, false, true);
+        prepareBypassDelayLine();
+    }
 
-    void numChannelsChanged() override { prepareResources (false, false, true); }
+    void prepareBypassDelayLine()
+    {
+        if (auto delayLineDepth = getLatencySamples())
+        {
+            auto numChans = getTotalNumOutputChannels();
+            delayLine = std::make_unique<jb::MultichannelDelayLine<float>> (delayLineDepth, numChans);
+            bypassTempBuffer.setSize (numChans, currentMaxNumSamplesPerBlock);
+        }
+        else
+        {
+            delayLine.reset (nullptr);
+        }
+    }
 
     // I don't ever plan to build a plugin without editor
     bool hasEditor() const override { return true; }
