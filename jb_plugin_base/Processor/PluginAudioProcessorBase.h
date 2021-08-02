@@ -226,6 +226,9 @@ private:
 
     void numChannelsChanged() override
     {
+        if (currentSampleRate == 0.0)
+            currentSampleRate = 50e3;
+
         prepareResources (false, false, true);
         prepareBypassDelayLine();
     }
