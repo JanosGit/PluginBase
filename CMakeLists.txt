@@ -12,23 +12,23 @@ macro (jb_add_git_version_info TARGET_NAME)
     file (TOUCH ${CMAKE_CURRENT_BINARY_DIR}/gitVersion.cpp)
 
     # This custom target creates the actual file
-    add_custom_target (jb_create_git_version
+    add_custom_target (jb_create_git_version-${TARGET_NAME}
             COMMAND ${CMAKE_COMMAND} -DOUT_DIR=${CMAKE_CURRENT_BINARY_DIR} -P ${JB_PLUGIN_BASE_DIR}/CMake/gitVersion.cmake
             WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
 
     # This compiles the file into a simple static library
-    add_library(jb_git_version STATIC
+    add_library(jb_git_version-${TARGET_NAME} STATIC
             ${CMAKE_CURRENT_BINARY_DIR}/gitVersion.cpp)
 
     # This makes sure that the file is created before it gets compiled
-    add_dependencies (jb_git_version jb_create_git_version)
+    add_dependencies (jb_git_version-${TARGET_NAME} jb_create_git_version-${TARGET_NAME})
 
     # If this is set, jb_plugin_base will include GitVersion.h
-    target_compile_definitions (jb_git_version
+    target_compile_definitions (jb_git_version-${TARGET_NAME}
         PUBLIC
             JB_HAS_GIT_VERSION=1)
 
     target_link_libraries (${TARGET_NAME}
        PRIVATE
-            jb_git_version)
+            jb_git_version-${TARGET_NAME})
 endmacro()
