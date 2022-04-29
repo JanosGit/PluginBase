@@ -105,14 +105,16 @@ public:
 
                 if (!update.isVoid())
                 {
-                    int64_t updateVersion = static_cast<juce::int64>(update.getProperty ("Version", static_cast<juce::int64>(currentPluginVersion)));
+                    int64_t updateVersion = static_cast<juce::int64> (update.getProperty ("Version", static_cast<juce::int64> (currentPluginVersion)));
+
                     if (updateVersion > currentPluginVersion && update.hasProperty ("Text") && update.hasProperty ("Link"))
                         messages.updateMessage = makeMessage (updateVersion, update);
                 }
 
                 if (!general.isVoid())
                 {
-                    int generalMessageVersion = static_cast<juce::int64>(general.getProperty ("Version", static_cast<juce::int64>(lastVersion)));
+                    int64_t generalMessageVersion = static_cast<juce::int64> (general.getProperty ("Version", static_cast<juce::int64> (lastVersion)));
+
                     if (generalMessageVersion > lastVersion && general.hasProperty ("Text"))
                         messages.generalMessage = makeMessage (generalMessageVersion, general);
                 }
