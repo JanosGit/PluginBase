@@ -88,7 +88,7 @@ public:
         // Start a background thread to ask the server for a message
         std::thread ([promisedMsg = std::move (promisedMessages), lastVersion = lastGeneralMessageVersion, this] () mutable
         {
-            if (auto stream = url.createInputStream (false))
+            if (auto stream = url.createInputStream (juce::URL::InputStreamOptions (juce::URL::ParameterHandling::inAddress)))
             {
                 auto json = juce::JSON::parse (*stream);
 
