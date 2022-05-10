@@ -68,16 +68,9 @@
 #if JB_INCLUDE_JSON
 #include <fstream>
 
-#if JUCE_CLANG
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wswitch-enum"
-#endif // JUCE_CLANG
-
+JUCE_BEGIN_IGNORE_WARNINGS_GCC_LIKE("-Wswitch-enum")
 #include <nlohmann/json.hpp>
-
-#if JUCE_CLANG
-#pragma clang diagnostic pop
-#endif // JUCE_CLANG
+JUCE_END_IGNORE_WARNINGS_GCC_LIKE
 
 #endif // JB_INCLUDE_JSON
 
@@ -89,7 +82,9 @@
 #include "Utils/Memory.h"
 #include "Utils/MessageOfTheDay.h"
 
+JUCE_BEGIN_IGNORE_WARNINGS_GCC_LIKE("-Woverloaded-virtual")
 #include "Processor/PluginAudioProcessorBase.h"
+JUCE_END_IGNORE_WARNINGS_GCC_LIKE
 
 #include "Editor/HighlightableWidget.h"
 #include "Editor/PluginEditorBase.h"
