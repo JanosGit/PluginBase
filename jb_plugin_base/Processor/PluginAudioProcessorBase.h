@@ -139,7 +139,7 @@ private:
 
     void prepareToPlay (double newSampleRate, int maxNumSamplesPerBlock) override
     {
-        auto sampleRateChanged = newSampleRate != currentSampleRate;
+        auto sampleRateChanged = ! juce::exactlyEqual (newSampleRate, currentSampleRate);
         auto samplesPerBlockChanged = maxNumSamplesPerBlock != currentMaxNumSamplesPerBlock;
 
         currentSampleRate = newSampleRate;

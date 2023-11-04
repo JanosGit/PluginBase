@@ -103,7 +103,7 @@ private:
     juce::AudioBuffer<SampleType> memory;
     std::vector<int> indices;
 
-    SampleType** memoryPtr;
+    SampleType* const* memoryPtr;
     const int length;
     const int numChannels;
 };
