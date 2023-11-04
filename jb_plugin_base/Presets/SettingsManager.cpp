@@ -32,7 +32,8 @@ namespace jb
     {
         if (!settingsFile.existsAsFile())
         {
-            settingsFile.create();
+            auto result = settingsFile.create();
+            jassertquiet (result.wasOk());
             return;
         }
 
